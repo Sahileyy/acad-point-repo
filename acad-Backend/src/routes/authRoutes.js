@@ -1,16 +1,18 @@
 import express from "express";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 import Student from "../models/studentSchema.js";
 import Faculty from "../models/facultySchema.js";
 import Admin from "../models/adminSchema.js";
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || "acad-point-secret-2024";
 
 /* =========================
    LOGIN (Student / Faculty / Admin)
 ========================= */
-router.post("/auth/login", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { role, id, password } = req.body;
 
@@ -18,14 +20,11 @@ router.post("/auth/login", async (req, res) => {
 
     if (role === "student") {
       user = await Student.findOne({ registerNumber: id });
-    } 
-    else if (role === "faculty") {
+    } else if (role === "faculty") {
       user = await Faculty.findOne({ facultyId: id });
-    } 
-    else if (role === "admin") {
+    } else if (role === "admin") {
       user = await Admin.findOne({ username: id });
-    } 
-    else {
+    } else {
       return res.status(400).json({ message: "Invalid role" });
     }
 
@@ -38,13 +37,25 @@ router.post("/auth/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.json({
       message: "Login successful",
+      token,
       user: {
         id: user._id,
         name: user.name || user.username,
         role: user.role,
         semester: user.semester || null,
+        department: user.department || null,
+        institution: user.institution || null,
+        registerNumber: user.registerNumber || null,
+        facultyId: user.facultyId || null,
       },
     });
   } catch (err) {
@@ -56,9 +67,9 @@ router.post("/auth/login", async (req, res) => {
 /* =========================
    STUDENT REGISTER
 ========================= */
-router.post("/students/register", async (req, res) => {
+router.post("/register/student", async (req, res) => {
   try {
-    const { registerNumber, name, semester, password } = req.body;
+    const { registerNumber, name, semester, department, password } = req.body;
 
     const exists = await Student.findOne({ registerNumber });
     if (exists) {
@@ -71,10 +82,67 @@ router.post("/students/register", async (req, res) => {
       registerNumber,
       name,
       semester,
+      department,
       password: hashedPassword,
     });
 
-    res.status(201).json({ message: "Registration successful" });
+    res.status(201).json({ message: "Student registered successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   FACULTY REGISTER
+========================= */
+router.post("/register/faculty", async (req, res) => {
+  try {
+    const { facultyId, name, department, password } = req.body;
+
+    const exists = await Faculty.findOne({ facultyId });
+    if (exists) {
+      return res.status(400).json({ message: "Faculty already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await Faculty.create({
+      facultyId,
+      name,
+      department,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "Faculty registered successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   ADMIN REGISTER
+========================= */
+router.post("/register/admin", async (req, res) => {
+  try {
+    const { username, department, institution, password } = req.body;
+
+    const exists = await Admin.findOne({ username });
+    if (exists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await Admin.create({
+      username,
+      department,
+      institution,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "Admin registered successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

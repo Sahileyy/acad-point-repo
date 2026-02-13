@@ -1,175 +1,262 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  GraduationCap,
-  Users,
-  Eye,
-  EyeOff
-} from "lucide-react";
+import { GraduationCap, Users, Shield, ArrowRight, Loader2 } from "lucide-react";
+import api from "../api/axios";
 
 export default function LoginRegister() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [role, setRole] = useState("student"); // student | faculty | admin
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("login"); // login | register
-  const [role, setRole] = useState("student"); // student | faculty
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [form, setForm] = useState({
-    registerNumber: "",
-    teacherId: "",
-    name: "",
-    password: ""
-  });
-
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const endpoint =
-    role === "student"
-      ? mode === "login"
-        ? "http://localhost:5000/students/login"
-        : "http://localhost:5000/students/register"
-      : mode === "login"
-        ? "http://localhost:5000/faculty/login"
-        : "http://localhost:5000/faculty/register";
+  // Form states
+  const [regNo, setRegNo] = useState("");
+  const [facultyId, setFacultyId] = useState("");
+  const [username, setUsername] = useState(""); // admin
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [department, setDepartment] = useState("");
+  const [semester, setSemester] = useState("Odd");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    const payload =
-      role === "student"
-        ? {
-            registerNumber: form.registerNumber,
-            name: form.name,
-            password: form.password
-          }
-        : {
-            teacherId: form.teacherId,
-            name: form.name,
-            password: form.password
-          };
+    try {
+      if (isLogin) {
+        // Login
+        const res = await api.post("/auth/login", {
+          role,
+          identifier:
+            role === "student" ? regNo : role === "faculty" ? facultyId : username,
+          password,
+        });
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+        if (role === "student") navigate("/student-dashboard");
+        else if (role === "faculty") navigate("/faculty-dashboard");
+        else navigate("/admin-dashboard");
+      } else {
+        // Register
+        const endpoint =
+          role === "student"
+            ? "/auth/register/student"
+            : role === "faculty"
+            ? "/auth/register/faculty"
+            : "/auth/register/admin";
 
-    const data = await res.json();
+        const payload = {
+          name,
+          password,
+          role,
+          ...(role === "student" && { registerNumber: regNo, semester }),
+          ...(role === "faculty" && { facultyId, department }),
+          ...(role === "admin" && { username, department, institution: "ACAD" }),
+        };
 
-    if (!res.ok) {
-      alert(data.message || "Authentication failed");
-      return;
-    }
-
-    if (data.role === "student") {
-      localStorage.setItem("student", JSON.stringify(data.student));
-      navigate("/student-dashboard");
-    } else {
-      localStorage.setItem("faculty", JSON.stringify(data.faculty));
-      navigate("/faculty-dashboard");
+        await api.post(endpoint, payload);
+        alert("Registration successful! Please login.");
+        setIsLogin(true);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const roleIcons = {
+    student: <GraduationCap size={28} className="text-white" />,
+    faculty: <Users size={28} className="text-white" />,
+    admin: <Shield size={28} className="text-white" />,
+  };
+
+  const roleLabels = {
+    student: "Student Portal",
+    faculty: "Faculty Portal",
+    admin: "Admin Portal",
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-500 to-indigo-600 p-4">
-      <div className="w-full max-w-md bg-white/90 backdrop-blur rounded-2xl shadow-2xl p-8">
-
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-3">
-            {role === "student"
-              ? <GraduationCap size={36} className="text-sky-600" />
-              : <Users size={36} className="text-indigo-600" />}
-          </div>
-          <h1 className="text-2xl font-bold">
-            {mode ===   " login " ? "Welcome back" : "Create Account"}
-          </h1>
-          <p className="text-gray-500 text-sm">
-            {role === "student" ? "Student Portal" : "Faculty Portal"}
-          </p>
+    <div className="min-h-screen flex flex-col items-center bg-white relative">
+      {/* Topographic Wave Background */}
+      <div className="w-full h-[45vh] topo-pattern relative flex flex-col items-center justify-center text-white p-6">
+        <div className="z-10 text-center mb-12">
+          <h1 className="text-4xl font-bold mb-2 tracking-tight">ACAD-POINT</h1>
+          <p className="text-sky-100 font-light text-lg">Activity Point Management System</p>
         </div>
-
-        {/* Role Switch */}
-        <div className="flex mb-6 bg-gray-100 rounded-xl overflow-hidden">
-          {["student", "faculty"].map((r) => (
-            <button
-              key={r}
-              onClick={() => setRole(r)}
-              className={`flex-1 py-2 font-semibold transition ${
-                role === r
-                  ? "bg-sky-500 text-white"
-                  : "text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {r === "student" ? "Student" : "Faculty"}
-            </button>
-          ))}
+        
+        {/* Wave Divider SVG */}
+        <div className="wave-divider-bottom">
+           <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+             <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="shape-fill"></path>
+           </svg>
         </div>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          {mode === "register" && (
-            <input
-              name="name"
-              placeholder=" full Name"
-              className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-sky-400 outline-none"
-              onChange={handleChange}
-              required
-            />
-          )}
-
-          {role === "student" ? (
-            <input
-              name="registerNumber"
-              placeholder="Register Number"
-              className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-sky-400 outline-none"
-              onChange={handleChange}
-              required
-            />
-          ) : (
-            <input
-              name="teacherId"
-              placeholder="Teacher ID"
-              className="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-sky-400 outline-none"
-              onChange={handleChange}
-              required
-            />
-          )}
-
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              className="w-full border rounded-xl px-4 py-3 pr-12 focus:ring-2 focus:ring-sky-400 outline-none"
-              onChange={handleChange}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-gray-500"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
+      {/* Glass Card Floating Over Wave */}
+      <div className="w-full max-w-md -mt-32 z-20 px-4">
+        <div className="glass-card bg-white p-8 mb-8">
+          
+          {/* Role Tabs */}
+          <div className="flex justify-center gap-4 mb-8">
+            {["student", "faculty", "admin"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRole(r)}
+                className={`p-3 rounded-2xl transition-all duration-300 ${
+                  role === r
+                    ? "bg-sky-500 text-white shadow-lg scale-110"
+                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                }`}
+                title={r.charAt(0).toUpperCase() + r.slice(1)}
+              >
+                {/* Dynamically render icon based on internal map, but we need to pass props manually if not using the object directly */}
+                {r === "student" && <GraduationCap size={24} />}
+                {r === "faculty" && <Users size={24} />}
+                {r === "admin" && <Shield size={24} />}
+              </button>
+            ))}
           </div>
 
-          <button className="w-full bg-gradient-to-r from-sky-500 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:scale-[1.02] transition">
-            {mode === "login" ? "Login" : "Register"}
-          </button>
-        </form>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-slate-800">{isLogin ? "Welcome Back" : "Create Account"}</h2>
+            <p className="text-slate-500 text-sm mt-1">{roleLabels[role]}</p>
+          </div>
 
-        {/* Toggle */}
-        <p className="text-center text-sm text-gray-600 mt-4">
-          {mode === "login" ? "No account?" : "Already registered?"}
-          <button
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
-            className="ml-2 text-sky-600 font-semibold hover:underline"
-          >
-            {mode === "login" ? "Register" : "Login"}
-          </button>
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+            
+            {/* Common Fields for Registration */}
+            {!isLogin && (
+              <div className="group">
+                <input
+                  className="input-minimal"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {/* Role Specific Fields */}
+            {role === "student" && (
+              <>
+                <div className="group">
+                  <input
+                    className="input-minimal"
+                    placeholder="Register Number"
+                    value={regNo}
+                    onChange={(e) => setRegNo(e.target.value)}
+                    required
+                  />
+                </div>
+                {!isLogin && (
+                  <div className="group">
+                    <select 
+                      className="input-minimal bg-transparent"
+                      value={semester} 
+                      onChange={(e) => setSemester(e.target.value)}
+                    >
+                      <option value="Odd">Odd Semester</option>
+                      <option value="Even">Even Semester</option>
+                    </select>
+                  </div>
+                )}
+              </>
+            )}
+
+            {role === "faculty" && (
+              <>
+                <div className="group">
+                  <input
+                    className="input-minimal"
+                    placeholder="Faculty ID"
+                    value={facultyId}
+                    onChange={(e) => setFacultyId(e.target.value)}
+                    required
+                  />
+                </div>
+                {!isLogin && (
+                  <div className="group">
+                    <input
+                      className="input-minimal"
+                      placeholder="Department"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {role === "admin" && (
+              <>
+                <div className="group">
+                  <input
+                    className="input-minimal"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                {!isLogin && (
+                   <div className="group">
+                    <input
+                      className="input-minimal"
+                      placeholder="Department"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="group">
+              <input
+                type="password"
+                className="input-minimal"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-wave flex items-center justify-center gap-2 mt-4"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Register"} <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center text-sm text-slate-500">
+            {isLogin ? "New here? " : "Already have an account? "}
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="font-semibold text-sky-600 hover:text-sky-700 hover:underline transition-colors"
+            >
+              {isLogin ? "Create an account" : "Sign in"}
+            </button>
+          </div>
+        </div>
+        
+        {/* Footer info */}
+        <p className="text-center text-xs text-slate-400">
+          © 2024 ACAD-POINT System v1.0
         </p>
       </div>
     </div>

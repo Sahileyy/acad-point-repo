@@ -18,7 +18,7 @@ import api from "../api/axios";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
   const [activeTab, setActiveTab] = useState("summary");
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/");
   };
 

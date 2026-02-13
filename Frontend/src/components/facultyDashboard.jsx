@@ -15,7 +15,7 @@ import api from "../api/axios";
 
 export default function FacultyDashboard() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
   const [search, setSearch] = useState("");
   const [students, setStudents] = useState([]);
@@ -49,7 +49,7 @@ export default function FacultyDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/");
   };
 

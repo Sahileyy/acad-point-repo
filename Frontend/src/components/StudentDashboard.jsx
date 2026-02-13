@@ -12,45 +12,32 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Briefcase,
+  BookOpen,
 } from "lucide-react";
 import api from "../api/axios";
 
 /* ============================
-   Sub-category options per group
+   Sub-category options
 ============================ */
 const GROUP_OPTIONS = {
   I: [
-    "NSS",
-    "NCC",
-    "NSO",
-    "Arts",
-    "Sports",
-    "Games",
-    "Club Activities",
+    "NSS", "NCC", "NSO", "Arts", "Sports", "Games", "Club Activities",
   ],
   II: [
-    "English Certification",
-    "Aptitude Certification",
-    "Internship (min 2 weeks)",
-    "Workshop",
-    "Conference",
-    "Paper Presentation",
-    "Hackathon",
+    "English Certification", "Aptitude Certification", "Internship",
+    "Workshop", "Conference", "Paper Presentation", "Hackathon",
   ],
   III: [
-    "Journal Publication",
-    "Patent",
-    "Start-up",
-    "Innovation",
-    "National/International Hackathon Winner",
-    "University Skilling Certificate",
+    "Journal Publication", "Patent", "Start-up", "Innovation",
+    "Hackathon Winner", "University Skilling Certificate",
   ],
 };
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data
   const [profile, setProfile] = useState(null);
@@ -60,10 +47,7 @@ export default function StudentDashboard() {
   // Upload form
   const [uploadGroup, setUploadGroup] = useState("");
   const [uploadForm, setUploadForm] = useState({
-    subCategory: "",
-    title: "",
-    description: "",
-    pointsClaimed: "",
+    subCategory: "", title: "", description: "", pointsClaimed: "",
   });
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -90,7 +74,7 @@ export default function StudentDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/");
   };
 
@@ -132,8 +116,11 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-100">
-        <div className="text-xl text-gray-600 animate-pulse">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+           <div className="w-12 h-12 border-4 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+           <p className="text-gray-500 font-medium">Loading Dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -141,251 +128,247 @@ export default function StudentDashboard() {
   const totalEarned = profile?.totalPointsEarned || 0;
   const totalRequired = profile?.totalPointsRequired || 120;
   const progress = totalRequired > 0 ? Math.round((totalEarned / totalRequired) * 100) : 0;
+  
   const gI = profile?.activityPoints?.groupI || 0;
   const gII = profile?.activityPoints?.groupII || 0;
   const gIII = profile?.activityPoints?.groupIII || 0;
 
-  const getGroupCerts = (group) =>
-    certificates.filter((c) => c.group === group);
+  const getGroupCerts = (group) => certificates.filter((c) => c.group === group);
+  const getPendingCount = (group) => certificates.filter((c) => c.group === group && c.status === "Pending").length;
 
-  const getPendingCount = (group) =>
-    certificates.filter((c) => c.group === group && c.status === "Pending").length;
-
-  /* ---------- SIDEBAR ---------- */
+  /* ---------- SIDEBAR (FIXED) ---------- */
   const Sidebar = () => (
-    <div
-      className={`${
-        sidebarOpen ? "w-64" : "w-20"
-      } bg-white border-r border-slate-200 transition-all duration-300 flex flex-col h-screen sticky top-0 z-50`}
-    >
-      <div className="p-6 border-b border-sky-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-sky-400 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Award className="text-white" size={24} />
-          </div>
-          {sidebarOpen && (
-            <div>
-              <h2 className="font-bold text-gray-800">Activity Portal</h2>
-              <p className="text-xs text-gray-500">Student System</p>
-            </div>
-          )}
+    <>
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Content */}
+      <div
+        className={`fixed lg:sticky top-0 left-0 h-screen w-72 bg-white/80 backdrop-blur-xl border-r border-slate-100 flex flex-col z-50 transition-transform duration-300 ease-in-out shadow-sm ${
+           mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        {/* Header */}
+        <div className="h-24 flex items-center px-8 border-b border-slate-100/50">
+           <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold shadow-lg shadow-sky-200">A</div>
+              <span className="font-bold text-xl tracking-tight text-slate-800">ACAD<span className="text-sky-600">POINT</span></span>
+           </div>
+           {/* Close button for mobile */}
+           <button 
+              onClick={() => setMobileMenuOpen(false)} 
+              className="lg:hidden ml-auto p-2 text-slate-400"
+           >
+              <X size={20} />
+           </button>
+        </div>
+
+        <nav className="flex-1 p-5 space-y-2 overflow-y-auto mt-2">
+          {[
+            { id: "profile", icon: User, label: "Overview" },
+            { id: "group1", icon: Award, label: "Co-curricular" },
+            { id: "group2", icon: Briefcase, label: "Skill Dev" },
+            { id: "group3", icon: BookOpen, label: "Research" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileMenuOpen(false);
+              }}
+              className={`group relative w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 ${
+                activeTab === item.id 
+                  ? "bg-sky-50 text-sky-600 shadow-sm" 
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <div className={`transition-transform duration-200 ${activeTab === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                 <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 1.5} />
+              </div>
+              <span className="font-medium text-[15px]">{item.label}</span>
+              
+              {activeTab === item.id && (
+                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-sky-500" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-5 border-t border-slate-100/50">
+          <button
+            onClick={handleLogout}
+            className="group w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50/50 transition-all duration-200"
+          >
+            <LogOut size={20} className="group-hover:scale-110 transition-transform" />
+            <span className="font-medium text-[15px]">Sign Out</span>
+          </button>
         </div>
       </div>
-
-      <nav className="flex-1 p-4">
-        {[
-          { id: "profile", icon: User, label: "Profile" },
-          { id: "group1", icon: Award, label: "Group I" },
-          { id: "group2", icon: FileText, label: "Group II" },
-          { id: "group3", icon: TrendingUp, label: "Group III" },
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 mb-2 sidebar-link ${
-              activeTab === item.id
-                ? "active"
-                : "text-slate-500 hover:bg-slate-50"
-            }`}
-          >
-            <item.icon size={20} />
-            {sidebarOpen && <span className="font-medium">{item.label}</span>}
-          </button>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t border-sky-100">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-all duration-300"
-        >
-          <LogOut size={20} />
-          {sidebarOpen && <span className="font-medium">Logout</span>}
-        </button>
-      </div>
-    </div>
+    </>
   );
 
   /* ---------- PROFILE TAB ---------- */
   const ProfileTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl p-8 shadow-lg border border-sky-100">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="w-24 h-24 bg-gradient-to-r from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-            {profile?.name?.charAt(0) || "S"}
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800">
-              {profile?.name}
-            </h2>
-            <p className="text-gray-600">{profile?.registerNumber}</p>
-            <span className="inline-block mt-2 px-4 py-1 bg-sky-100 text-sky-600 rounded-full text-sm font-semibold">
-              Semester: {profile?.semester}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl p-6 border border-sky-100">
-            <p className="text-sm text-gray-600 mb-2">Total Points Earned</p>
-            <p className="text-4xl font-bold text-sky-600">{totalEarned}</p>
-          </div>
-          <div className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl p-6 border border-cyan-100">
-            <p className="text-sm text-gray-600 mb-2">Points Required</p>
-            <p className="text-4xl font-bold text-cyan-600">{totalRequired}</p>
-          </div>
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-            <p className="text-sm text-gray-600 mb-2">Progress</p>
-            <p className="text-4xl font-bold text-blue-600">{progress}%</p>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-semibold text-gray-700">
-              Overall Progress
-            </span>
-            <span className="text-sm font-bold text-sky-600">
-              {totalEarned}/{totalRequired}
-            </span>
-          </div>
-          <div className="progress-bar w-full h-4">
-            <div
-              className="progress-fill h-full"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            ></div>
-          </div>
-        </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* Main Profile Card - OVERLAPPING WAVE */}
+      <div className="pro-card-floating p-8 -mt-24 flex flex-col md:flex-row items-center md:items-start gap-8 bg-white/90 backdrop-blur-sm">
+         <div className="w-24 h-24 bg-gradient-to-br from-sky-100 to-slate-100 rounded-full flex items-center justify-center text-3xl font-bold text-sky-600 shadow-inner ring-4 ring-white">
+            {profile?.name?.charAt(0) || "U"}
+         </div>
+         <div className="flex-1 text-center md:text-left">
+            <h2 className="text-3xl font-bold text-slate-800">{profile?.name}</h2>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-slate-500 mb-6">
+               <span className="bg-slate-100 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide text-slate-600">{profile?.registerNumber}</span>
+               <span className="text-slate-300">•</span>
+               <span>Semester {profile?.semester}</span>
+               <span className="text-slate-300">•</span>
+               <span>{profile?.department || "CSE"}</span>
+            </div>
+            
+            <div className="w-full">
+              <div className="flex justify-between items-end mb-2">
+                 <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Progress</span>
+                 <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-sky-600">{progress}%</span>
+                    <span className="text-xs text-slate-400 font-medium">COMPLETED</span>
+                 </div>
+              </div>
+              <div className="progress-container h-4 bg-slate-100 shadow-inner">
+                 <div className="progress-fill bg-gradient-to-r from-sky-500 to-sky-600" style={{ width: `${Math.min(progress, 100)}%` }}></div>
+              </div>
+              <p className="text-xs text-slate-400 mt-2 text-right font-medium">{totalEarned} earned / {totalRequired} required</p>
+            </div>
+         </div>
       </div>
 
-      {/* Group Summary Cards */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: "Group I – Co-curricular", val: gI, color: "sky", group: "I" },
-          { label: "Group II – Skill Dev", val: gII, color: "cyan", group: "II" },
-          { label: "Group III – Research", val: gIII, color: "blue", group: "III" },
+          { label: "Group I", sub: "Co-curricular", val: gI, icon: Award, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Group II", sub: "Skill Dev", val: gII, icon: Briefcase, color: "text-emerald-500", bg: "bg-emerald-50" },
+          { label: "Group III", sub: "Research", val: gIII, icon: BookOpen, color: "text-purple-500", bg: "bg-purple-50" },
         ].map((g) => (
-          <div
-            key={g.group}
-            className="bg-white rounded-2xl p-6 shadow-lg border border-sky-100"
-          >
-            <h3 className="font-bold text-gray-800 mb-4">{g.label}</h3>
-            <div className="flex justify-between items-center mb-3">
-              <span className={`text-2xl font-bold text-${g.color}-600`}>
-                {g.val}/40
-              </span>
-              <span className="text-sm text-gray-500">Points</span>
-            </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-              <div
-                className={`h-full bg-${g.color}-400 rounded-full`}
-                style={{ width: `${(g.val / 40) * 100}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">
-              {getPendingCount(g.group)} pending approvals
-            </p>
+          <div key={g.label} className="pro-card p-6 flex items-start justify-between hover:shadow-lg transition-all cursor-default">
+             <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{g.sub}</p>
+                <div className="mt-2 flex items-baseline gap-1">
+                   <span className="text-4xl font-bold text-slate-800">{g.val}</span>
+                   <span className="text-sm text-slate-400 font-medium">/ 40</span>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${getPendingCount(g.label.split(" ")[1]) > 0 ? 'bg-amber-400' : 'bg-slate-200'}`}></span>
+                    <p className="text-xs text-slate-500 font-medium">{getPendingCount(g.label.split(" ")[1])} pending approval</p>
+                </div>
+             </div>
+             <div className={`p-3.5 rounded-2xl ${g.bg} bg-opacity-50`}>
+                <g.icon className={g.color} size={28} strokeWidth={1.5} />
+             </div>
           </div>
         ))}
       </div>
+
     </div>
   );
 
   /* ---------- GROUP TAB ---------- */
   const GroupTab = ({ group, groupName, description }) => {
     const certs = getGroupCerts(group);
-    const earned =
-      group === "I" ? gI : group === "II" ? gII : gIII;
+    const earned = group === "I" ? gI : group === "II" ? gII : gIII;
 
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-sky-100">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{groupName}</h2>
-          <p className="text-gray-600 mb-6">{description}</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-sky-50 rounded-xl p-4">
-              <p className="text-sm text-gray-600">Earned Points</p>
-              <p className="text-2xl font-bold text-sky-600">{earned}</p>
-            </div>
-            <div className="bg-blue-50 rounded-xl p-4">
-              <p className="text-sm text-gray-600">Maximum Points</p>
-              <p className="text-2xl font-bold text-blue-600">40</p>
-            </div>
-            <div className="bg-cyan-50 rounded-xl p-4">
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-2xl font-bold text-cyan-600">
-                {getPendingCount(group)}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => openUploadModal(group)}
-            className="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <Upload size={20} />
-            Upload Certificate
-          </button>
+      <div className="space-y-6 -mt-24 relative z-20 animate-in fade-in slide-in-from-bottom-4 duration-500"> {/* Negative margins to overlap header */}
+        
+        {/* Header Card */}
+        <div className="pro-card p-8 bg-white/95 backdrop-blur-sm">
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                 <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-2xl font-bold text-slate-800">{groupName}</h2>
+                    <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${
+                         earned >= 40 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-sky-50 text-sky-600 border-sky-100'
+                    }`}>
+                        {earned >= 40 ? 'COMPLETED' : 'IN PROGRESS'}
+                    </span>
+                 </div>
+                 <p className="text-slate-500 text-sm max-w-2xl leading-relaxed">{description}</p>
+                 <div className="mt-6 flex items-center gap-6 text-sm">
+                    <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-slate-400 uppercase">Earned</span>
+                        <span className="text-lg font-bold text-slate-800">{earned}/40</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-100"></div>
+                    <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-slate-400 uppercase">Pending</span>
+                        <span className="text-lg font-bold text-amber-500">{getPendingCount(group)}</span>
+                    </div>
+                 </div>
+              </div>
+              <button
+                onClick={() => openUploadModal(group)}
+                className="btn-primary flex items-center gap-2 shadow-lg shadow-sky-200/50 px-6 py-3"
+              >
+                <Upload size={18} />
+                <span>Upload Certificate</span>
+              </button>
+           </div>
         </div>
 
-        {/* Certificate List */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-sky-100">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
-            Uploaded Certificates
-          </h3>
+        {/* Certificate Table/List */}
+        <div className="pro-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+             <h3 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Activity Logs</h3>
+             <span className="text-xs font-medium text-slate-400">{certs.length} Entries</span>
+          </div>
+          
           {certs.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
-              No certificates uploaded yet
-            </p>
+            <div className="p-16 text-center text-slate-400">
+               <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText size={24} className="opacity-40" />
+               </div>
+               <p className="text-slate-500 font-medium">No certificates uploaded yet</p>
+               <p className="text-xs text-slate-400 mt-1">Upload a certificate to get started</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-slate-100">
               {certs.map((cert) => (
-                <div
-                  key={cert._id}
-                  className="bg-gray-50 rounded-xl p-4 border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">
-                        {cert.title}
-                      </h4>
-                      <p className="text-sm text-gray-500">
-                        {cert.subCategory} •{" "}
-                        {new Date(cert.createdAt).toLocaleDateString()}
-                      </p>
-                      {cert.remarks && (
-                        <p className="text-xs text-gray-500 mt-1 italic">
-                          Remarks: {cert.remarks}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold text-sky-600">
-                        {cert.pointsClaimed} pts
+                <div key={cert._id} className="p-5 hover:bg-slate-50/80 transition-colors flex items-center justify-between group">
+                   <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-sky-500 shadow-sm">
+                         <FileText size={20} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                         <h4 className="font-semibold text-slate-800 text-sm md:text-base">{cert.title}</h4>
+                         <p className="text-xs text-slate-500 mt-1">{cert.subCategory}</p>
+                         {cert.remarks && (
+                            <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1.5 bg-red-50 px-2 py-1 rounded-md inline-flex">
+                               <AlertCircle size={10} /> {cert.remarks}
+                            </p>
+                         )}
+                      </div>
+                   </div>
+                   
+                   <div className="flex items-center gap-4 md:gap-8">
+                      <div className="text-right hidden sm:block">
+                          <span className="block text-sm font-bold text-slate-700">{cert.pointsClaimed} pts</span>
+                          <span className="text-xs text-slate-400">{new Date(cert.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border ${
+                          cert.status === "Approved" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                          cert.status === "Pending" ? "bg-amber-50 text-amber-600 border-amber-100" :
+                          "bg-red-50 text-red-600 border-red-100"
+                      }`}>
+                          {cert.status === "Approved" && <CheckCircle size={12} />}
+                          {cert.status === "Pending" && <Clock size={12} />}
+                          {cert.status === "Rejected" && <X size={12} />}
+                          <span className="uppercase tracking-wider text-[10px]">{cert.status}</span>
                       </span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          cert.status === "Approved"
-                            ? "bg-green-100 text-green-600"
-                            : cert.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-600"
-                            : "bg-red-100 text-red-600"
-                        }`}
-                      >
-                        {cert.status === "Approved" && (
-                          <CheckCircle className="inline mr-1" size={12} />
-                        )}
-                        {cert.status === "Pending" && (
-                          <Clock className="inline mr-1" size={12} />
-                        )}
-                        {cert.status === "Rejected" && (
-                          <AlertCircle className="inline mr-1" size={12} />
-                        )}
-                        {cert.status}
-                      </span>
-                    </div>
-                  </div>
+                   </div>
                 </div>
               ))}
             </div>
@@ -395,153 +378,142 @@ export default function StudentDashboard() {
     );
   };
 
-
-
   /* ---------- RENDER ---------- */
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-cyan-100">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
       <Sidebar />
 
+      {/* Mobile Menu Toggle */}
       <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-gray-600 hover:bg-sky-50 transition-all duration-300 lg:hidden"
+        onClick={() => setMobileMenuOpen(true)}
+        className="fixed top-4 left-4 z-50 w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-slate-600 lg:hidden"
       >
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        <Menu size={20} />
       </button>
 
       <div className="flex-1 overflow-auto bg-slate-50 relative">
-        {/* Topographic Wave Header */}
-        <div className="header-wave-container topo-pattern pt-8 pb-20 px-8 text-white">
-          <div className="max-w-7xl mx-auto flex justify-between items-center relative z-10">
-            <div>
-              <h1 className="text-3xl font-bold">Student Dashboard</h1>
-              <p className="text-sky-100 mt-1">Manage your activity points and certificates</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md p-2 rounded-lg border border-white/20">
-               <span className="font-mono text-sm">Sem: {profile?.semester || "..."}</span>
-            </div>
+        {/* Header with Deep Indigo/Slate Gradient */}
+        <div className="topo-pattern header-wave-container pt-12 pb-32 px-4 md:px-8 text-white">
+          <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+             <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Student Dashboard</h1>
+                <p className="text-sky-200 mt-1 font-light opacity-90">Manage your activity points</p>
+             </div>
+             <div className="hidden md:flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full shadow-lg">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-sm font-medium text-sky-50">Active Session</span>
+             </div>
           </div>
-          
-           {/* Wave Divider */}
-           <div className="wave-divider-bottom">
-             <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-               <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="shape-fill"></path>
-             </svg>
-           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 pb-12 -mt-10 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-12 relative z-10 transition-all duration-300">
           {activeTab === "profile" && <ProfileTab />}
-          {activeTab === "group1" && (
-            <GroupTab
-              group="I"
-              groupName="Group I"
-              description="NSS/NCC/NSO, Arts, Sports, Games, and Club Activities"
-            />
-          )}
-          {activeTab === "group2" && (
-            <GroupTab
-              group="II"
-              groupName="Group II"
-              description="Certifications, Internships, Workshops, Conferences, Paper Presentations, Hackathons"
-            />
-          )}
-          {activeTab === "group3" && (
-            <GroupTab
-              group="III"
-              groupName="Group III"
-              description="Journal Publications, Patents, Start-ups, Innovations, National/International Hackathon Winners"
-            />
-          )}
+          {activeTab === "group1" && <GroupTab group="I" groupName="Group I" description="Co-curricular Activities (NSS, NCC, Sports, etc.)" />}
+          {activeTab === "group2" && <GroupTab group="II" groupName="Group II" description="Skill Development (Certifications, Internships, etc.)" />}
+          {activeTab === "group3" && <GroupTab group="III" groupName="Group III" description="Research & Innovation (Publications, Patents, etc.)" />}
         </div>
       </div>
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">
-                Upload Certificate — Group {uploadGroup}
-              </h2>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="text-gray-500 hover:text-gray-800"
-              >
-                <X size={20} />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-100">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div>
+                  <h2 className="text-lg font-bold text-slate-800">Upload Certificate</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Group {uploadGroup}</p>
+              </div>
+              <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-slate-700 bg-slate-50 p-2 rounded-full hover:bg-slate-100 transition-colors">
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleUpload} className="space-y-4">
-              <select
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-white"
-                value={uploadForm.subCategory}
-                onChange={(e) =>
-                  setUploadForm({ ...uploadForm, subCategory: e.target.value })
-                }
-                required
-              >
-                <option value="">Select Sub-Category</option>
-                {GROUP_OPTIONS[uploadGroup]?.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+            <form onSubmit={handleUpload} className="p-6 space-y-5 bg-slate-50/30">
+              <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                        <select
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white shadow-sm"
+                          value={uploadForm.subCategory}
+                          onChange={(e) => setUploadForm({ ...uploadForm, subCategory: e.target.value })}
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          {GROUP_OPTIONS[uploadGroup]?.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                     </div>
+                  </div>
 
-              <input
-                placeholder="Certificate Title"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3"
-                value={uploadForm.title}
-                onChange={(e) =>
-                  setUploadForm({ ...uploadForm, title: e.target.value })
-                }
-                required
-              />
-
-              <textarea
-                placeholder="Description (optional)"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3"
-                rows={2}
-                value={uploadForm.description}
-                onChange={(e) =>
-                  setUploadForm({ ...uploadForm, description: e.target.value })
-                }
-              />
-
-              <input
-                type="number"
-                placeholder="Points Claimed (1-40)"
-                min={1}
-                max={40}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3"
-                value={uploadForm.pointsClaimed}
-                onChange={(e) =>
-                  setUploadForm({ ...uploadForm, pointsClaimed: e.target.value })
-                }
-                required
-              />
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Upload File (JPG, PNG, or PDF — max 5MB)
-                </label>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3"
-                  onChange={(e) => setUploadFile(e.target.files[0])}
-                  required
-                />
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Certificate Title</label>
+                    <input
+                      placeholder="e.g. AWS Cloud Practitioner"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white shadow-sm"
+                      value={uploadForm.title}
+                      onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+                      required
+                    />
+                  </div>
+    
+                  <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                        <textarea
+                          placeholder="Optional details..."
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white shadow-sm resize-none"
+                          rows={1}
+                          value={uploadForm.description}
+                          onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Points</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={40}
+                          placeholder="Max 40"
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white shadow-sm"
+                          value={uploadForm.pointsClaimed}
+                          onChange={(e) => setUploadForm({ ...uploadForm, pointsClaimed: e.target.value })}
+                          required
+                        />
+                      </div>
+                  </div>
+    
+                  <div>
+                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Proof Document</label>
+                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-white hover:border-sky-400 transition-colors relative cursor-pointer bg-slate-50/50 group">
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf"
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                          onChange={(e) => setUploadFile(e.target.files[0])}
+                          required
+                        />
+                        <div className="flex flex-col items-center">
+                           <div className="p-3 bg-white rounded-full shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                              <Upload size={20} className="text-sky-500" />
+                           </div>
+                           <p className="text-sm text-slate-700 font-semibold">{uploadFile ? uploadFile.name : "Click to upload file"}</p>
+                           <p className="text-xs text-slate-400 mt-1">PDF, JPG or PNG (Max 5MB)</p>
+                        </div>
+                     </div>
+                  </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={uploading}
-                className="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
-              >
-                {uploading ? "Uploading..." : "Submit Certificate"}
-              </button>
+              <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="w-full btn-primary py-3.5 rounded-xl shadow-lg shadow-sky-200 font-bold tracking-wide text-sm uppercase"
+                  >
+                    {uploading ? "Uploading..." : "Submit Certificate"}
+                  </button>
+              </div>
             </form>
           </div>
         </div>

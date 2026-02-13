@@ -11,8 +11,8 @@ import "./index.css";
 
 /* ---------- Route Guard ---------- */
 function ProtectedRoute({ children, allowedRole }) {
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  const token = localStorage.getItem("token");
+  const user = JSON.parse(sessionStorage.getItem("user") || "null");
+  const token = sessionStorage.getItem("token");
 
   if (!user || !token) return <Navigate to="/" replace />;
   if (allowedRole && user.role !== allowedRole) return <Navigate to="/" replace />;

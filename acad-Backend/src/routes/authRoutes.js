@@ -14,7 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "acad-point-secret-2024";
 ========================= */
 router.post("/login", async (req, res) => {
   try {
-    const { role, id, password } = req.body;
+    const { role, identifier: id, password } = req.body;
 
     let user;
 

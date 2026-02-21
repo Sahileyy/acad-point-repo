@@ -8,9 +8,9 @@ import Admin from "../models/adminSchema.js";
 const router = express.Router();
 
 /* =========================
-   LOGIN (Student / Faculty / Admin)
+   LOGIN  (Student / Faculty / Admin)
 ========================= */
-router.post("/auth/login", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { role, id, password } = req.body;
 
@@ -18,14 +18,11 @@ router.post("/auth/login", async (req, res) => {
 
     if (role === "student") {
       user = await Student.findOne({ registerNumber: id });
-    } 
-    else if (role === "faculty") {
+    } else if (role === "faculty") {
       user = await Faculty.findOne({ facultyId: id });
-    } 
-    else if (role === "admin") {
+    } else if (role === "admin") {
       user = await Admin.findOne({ username: id });
-    } 
-    else {
+    } else {
       return res.status(400).json({ message: "Invalid role" });
     }
 
@@ -45,6 +42,9 @@ router.post("/auth/login", async (req, res) => {
         name: user.name || user.username,
         role: user.role,
         semester: user.semester || null,
+        department: user.department || null,
+        institution: user.institution || null,
+        registerNumber: user.registerNumber || null,
       },
     });
   } catch (err) {
@@ -75,6 +75,62 @@ router.post("/students/register", async (req, res) => {
     });
 
     res.status(201).json({ message: "Registration successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   FACULTY REGISTER
+========================= */
+router.post("/faculty/register", async (req, res) => {
+  try {
+    const { teacherId, name, department, password } = req.body;
+
+    const exists = await Faculty.findOne({ facultyId: teacherId });
+    if (exists) {
+      return res.status(400).json({ message: "Faculty already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await Faculty.create({
+      facultyId: teacherId,
+      name,
+      department,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "Faculty registration successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   ADMIN REGISTER
+========================= */
+router.post("/admin/register", async (req, res) => {
+  try {
+    const { username, department, institution, password } = req.body;
+
+    const exists = await Admin.findOne({ username });
+    if (exists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await Admin.create({
+      username,
+      department,
+      institution,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "Admin registration successful" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

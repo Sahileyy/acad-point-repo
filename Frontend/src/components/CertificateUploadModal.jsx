@@ -125,7 +125,11 @@ export default function CertificateUploadModal({ isOpen, onClose, groupName, onU
                                 name="certificateName"
                                 value={form.certificateName}
                                 onChange={handleChange}
-                                placeholder="e.g. NSS Camp Certificate"
+                                placeholder={
+                                    groupName === "Group I" ? "e.g. NSS Camp Certificate" :
+                                        groupName === "Group II" ? "e.g. Web Development Workshop" :
+                                            "e.g. IEEE Conference Paper"
+                                }
                                 className="w-full clay-input disabled:opacity-50"
                                 required
                                 disabled={submitting}
@@ -195,18 +199,28 @@ export default function CertificateUploadModal({ isOpen, onClose, groupName, onU
                             )}
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full clay-btn-dark py-4 text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-70"
-                        >
-                            {submitting ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            ) : (
-                                <Upload size={18} />
-                            )}
-                            {submitting ? "Submitting..." : "Submit Upload"}
-                        </button>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={handleReset}
+                                disabled={submitting}
+                                className="flex-1 clay-btn py-4 text-sm font-bold text-gray-500 hover:text-gray-900 border border-white bg-white/30 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="flex-[2] clay-btn-dark py-4 text-sm tracking-wide flex items-center justify-center gap-2 disabled:opacity-70"
+                            >
+                                {submitting ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <Upload size={18} />
+                                )}
+                                {submitting ? "Submitting..." : "Submit Request"}
+                            </button>
+                        </div>
                     </form>
                 )}
             </div>

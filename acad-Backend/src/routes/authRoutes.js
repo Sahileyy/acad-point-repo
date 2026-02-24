@@ -58,7 +58,12 @@ router.post("/login", async (req, res) => {
 ========================= */
 router.post("/students/register", async (req, res) => {
   try {
-    const { registerNumber, name, semester, password } = req.body;
+    const { registerNumber, name, semester, department, password } = req.body;
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(name)) {
+      return res.status(400).json({ message: "Name must contain only alphabetical characters and spaces" });
+    }
 
     const exists = await Student.findOne({ registerNumber });
     if (exists) {
@@ -71,6 +76,7 @@ router.post("/students/register", async (req, res) => {
       registerNumber,
       name,
       semester,
+      department,
       password: hashedPassword,
     });
 
@@ -87,6 +93,11 @@ router.post("/students/register", async (req, res) => {
 router.post("/faculty/register", async (req, res) => {
   try {
     const { teacherId, name, department, password } = req.body;
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(name)) {
+      return res.status(400).json({ message: "Name must contain only alphabetical characters and spaces" });
+    }
 
     const exists = await Faculty.findOne({ facultyId: teacherId });
     if (exists) {

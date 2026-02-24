@@ -8,11 +8,11 @@ const router = express.Router();
 // 1. Get all students (Admin & Faculty)
 router.get("/students", async (req, res) => {
     try {
-        const students = await Student.find({}, "-password"); // Exclude passwords
+        const { department } = req.query;
+        const filter = department ? { department } : {};
+        const students = await Student.find(filter, "-password"); // Exclude passwords
 
         // Let's also fetch their points
-        // This is simple but could be optimized with aggregation.
-        // Given the small DB, we can just do it in JS for now or with an aggregation.
         const allCerts = await Certificate.find({ status: "Approved" });
 
         const studentsWithPoints = students.map(student => {
@@ -34,7 +34,9 @@ router.get("/students", async (req, res) => {
 // 2. Get all teachers (Admin)
 router.get("/teachers", async (req, res) => {
     try {
-        const teachers = await Faculty.find({}, "-password");
+        const { department } = req.query;
+        const filter = department ? { department } : {};
+        const teachers = await Faculty.find(filter, "-password");
         res.status(200).json(teachers);
     } catch (error) {
         console.error("Error fetching teachers:", error);

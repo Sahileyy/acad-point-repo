@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useToast } from "../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminLogin() {
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const [mode, setMode] = useState("login");
@@ -61,13 +63,11 @@ export default function AdminLogin() {
                 return;
             }
 
-            if (mode === "register") {
-                setMode("login");
-                resetForm();
-                setLoading(false);
-                alert("Admin registered successfully! Please login.");
-                return;
-            }
+            setMode("login");
+            resetForm();
+            setLoading(false);
+            showToast("Admin registered successfully! Please login.", "success");
+            return;
 
             sessionStorage.setItem("user", JSON.stringify(data.user));
             navigate("/admin-dashboard");

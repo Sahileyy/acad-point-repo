@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useToast } from "../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   GraduationCap,
@@ -11,12 +12,15 @@ import {
 
 export default function LoginRegister() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [mode, setMode] = useState("login");
   const [role, setRole] = useState("student");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
+
 
   const initialForm = {
     registerNumber: "",
@@ -62,12 +66,21 @@ export default function LoginRegister() {
               : form.adminName;
         payload = { role, id: idField, password: form.password };
       } else {
+        // Name validation for student and faculty
+        const nameRegex = /^[A-Za-z\s]+$/;
+        if ((role === "student" || role === "faculty") && !nameRegex.test(form.name)) {
+          showToast("Full Name must contain only alphabetical characters and spaces.", "error");
+          setLoading(false);
+          return;
+        }
+
         if (role === "student") {
           endpoint = "http://localhost:5000/auth/students/register";
           payload = {
             registerNumber: form.registerNumber,
             name: form.name,
             semester: form.semester,
+            department: form.department,
             password: form.password,
           };
         } else if (role === "faculty") {
@@ -106,7 +119,8 @@ export default function LoginRegister() {
       if (mode === "register") {
         setMode("login");
         setLoading(false);
-        alert("Registration successful! Please login.");
+        showToast("Registration successful! Please login.", "success");
+        setIsLogin(true);
         return;
       }
 
@@ -123,173 +137,251 @@ export default function LoginRegister() {
     }
   };
 
+  const roleData = {
+    student: {
+      image: "/assets/student_login.png",
+      title: "Empowering Students,",
+      subtitle: "One Point at a Time",
+      description: "Manage your activity points, track certificates, and achieve your academic goals with ease.",
+      badges: ["Point Tracking", "Real-time Updates", "Secure Portal"]
+    },
+    faculty: {
+      image: "/assets/faculty_login.png",
+      title: "Empowering Faculty,",
+      subtitle: "One Click at a Time",
+      description: "Streamline student point verification, manage departmental records, and focus on mentoring.",
+      badges: ["Easy Verification", "Dept Management", "Secure Portal"]
+    }
+  };
+
+  const currentRoleData = roleData[role] || roleData.student;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm animate-in">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">AcadPoint</h1>
-          <p className="text-sm text-gray-400 mt-1">Activity Point Management</p>
-        </div>
+    <div className="min-h-screen flex bg-white lg:bg-gray-50 overflow-hidden">
+      {/* Left Panel: Branding & Image (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden bg-gray-900 group">
+        {/* Role-Specific Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+          style={{ backgroundImage: `url('${currentRoleData.image}')` }}
+        />
 
-        {/* Card */}
-        <div className="liquid-glass rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          {/* Subtle reflection line for glass effect */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-50"></div>
+        {/* Dynamic Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-gray-900 via-gray-900/40 to-transparent" />
 
-          {/* Title */}
-          <h2 className="text-xl font-bold text-gray-900 mb-1 relative z-10">
-            {mode === "login" ? "Sign in" : "Create account"}
-          </h2>
-          <p className="text-sm text-gray-500 mb-6 relative z-10 font-medium">
-            {role === "student" ? "Student Portal" : role === "faculty" ? "Faculty Portal" : "Admin Portal"}
-          </p>
-
-          {/* Role Tabs */}
-          <div className="flex mb-6 bg-white/40 backdrop-blur-md rounded-xl p-1 gap-1 relative z-10 border border-white/40 shadow-inner">
-            {roles.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => { setRole(key); resetForm(); setError(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${role === key
-                  ? "bg-white text-gray-900 shadow-sm border border-white/60"
-                  : "text-gray-600 hover:bg-white/30"
-                  }`}
-              >
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
+        {/* Branding Content */}
+        <div className="relative z-10 flex flex-col justify-between h-full p-12 text-white">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
+              <span className="text-xl font-bold bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">A</span>
+            </div>
+            <span className="text-2xl font-bold tracking-tight">AcadPoint</span>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="mb-4 px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-red-600 text-xs">
-              {error}
+          <div className="max-w-xl animate-in delay-2">
+            <h1 className="text-5xl font-extrabold leading-tight mb-4">
+              {currentRoleData.title}
+              <br />
+              <span className="text-white/80">{currentRoleData.subtitle}</span>
+            </h1>
+            <p className="text-lg text-gray-300 mb-8 font-medium">
+              {currentRoleData.description}
+            </p>
+
+            {/* Feature Badges */}
+            <div className="flex flex-wrap gap-3">
+              {currentRoleData.badges.map((badge, idx) => (
+                <div key={idx} className="px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-sm font-semibold flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-blue-400" />
+                  {badge}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-3" autoComplete="off">
-            {mode === "register" && (
-              <input
-                name="name"
-                placeholder="Full Name"
-                value={form.name}
-                className="w-full clay-input"
-                onChange={handleChange}
-                required
-              />
+          <div className="text-sm text-gray-400 font-medium">
+            © 2026 AcadPoint CMS • Trusted by Universities
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel: Auth Form */}
+      <div className="w-full lg:w-2/5 flex items-center justify-center p-6 lg:p-12 bg-white">
+        <div className="w-full max-w-md animate-in">
+          {/* Mobile Header (Hidden on Desktop) */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="inline-flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">A</span>
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">AcadPoint</h1>
+            </div>
+            <p className="text-sm text-gray-500">Activity Point Management</p>
+          </div>
+
+          {/* Card */}
+          <div className="liquid-glass rounded-2xl p-6 shadow-xl relative overflow-hidden">
+            {/* Subtle reflection line for glass effect */}
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-50"></div>
+
+            {/* Title */}
+            <h2 className="text-xl font-bold text-gray-900 mb-1 relative z-10">
+              {mode === "login" ? "Sign in" : "Create account"}
+            </h2>
+            <p className="text-sm text-gray-500 mb-6 relative z-10 font-medium">
+              {role === "student" ? "Student Portal" : role === "faculty" ? "Faculty Portal" : "Admin Portal"}
+            </p>
+
+            {/* Role Tabs */}
+            <div className="flex mb-6 bg-white/40 backdrop-blur-md rounded-xl p-1 gap-1 relative z-10 border border-white/40 shadow-inner">
+              {roles.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => { setRole(key); resetForm(); setError(""); }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${role === key
+                    ? "bg-white text-gray-900 shadow-sm border border-white/60"
+                    : "text-gray-600 hover:bg-white/30"
+                    }`}
+                >
+                  <Icon size={14} />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mb-4 px-3 py-2 bg-red-50 border border-red-100 rounded-lg text-red-600 text-xs">
+                {error}
+              </div>
             )}
 
-            {role === "student" && (
-              <input
-                name="registerNumber"
-                placeholder="Register Number"
-                value={form.registerNumber}
-                className="w-full clay-input"
-                onChange={handleChange}
-                autoComplete="off"
-                required
-              />
-            )}
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-3" autoComplete="off">
+              {mode === "register" && (
+                <input
+                  name="name"
+                  placeholder="Full Name"
+                  value={form.name}
+                  className="w-full clay-input"
+                  onChange={handleChange}
+                  required
+                />
+              )}
 
-            {role === "faculty" && (
-              <input
-                name="teacherId"
-                placeholder="Teacher ID"
-                value={form.teacherId}
-                className="w-full clay-input"
-                onChange={handleChange}
-                required
-              />
-            )}
+              {role === "student" && (
+                <input
+                  name="registerNumber"
+                  placeholder="Register Number"
+                  value={form.registerNumber}
+                  className="w-full clay-input"
+                  onChange={handleChange}
+                  autoComplete="off"
+                  required
+                />
+              )}
 
-            {role === "admin" && (
-              <input
-                name="adminName"
-                placeholder="Admin Username"
-                value={form.adminName}
-                className="w-full clay-input"
-                onChange={handleChange}
-                required
-              />
-            )}
+              {role === "faculty" && (
+                <input
+                  name="teacherId"
+                  placeholder="Teacher ID"
+                  value={form.teacherId}
+                  className="w-full clay-input"
+                  onChange={handleChange}
+                  required
+                />
+              )}
 
-            {((role === "admin") || (role === "faculty" && mode === "register")) && (
-              <input
-                name="department"
-                placeholder="Department"
-                value={form.department}
-                className="w-full clay-input"
-                onChange={handleChange}
-                required
-              />
-            )}
+              {role === "admin" && (
+                <input
+                  name="adminName"
+                  placeholder="Admin Username"
+                  value={form.adminName}
+                  className="w-full clay-input"
+                  onChange={handleChange}
+                  required
+                />
+              )}
 
-            {role === "admin" && (
-              <input
-                name="institution"
-                placeholder="Institution"
-                value={form.institution}
-                className="w-full clay-input"
-                onChange={handleChange}
-                required
-              />
-            )}
+              {((role === "admin") || (role === "faculty" && mode === "register") || (role === "student" && mode === "register")) && (
+                <select
+                  name="department"
+                  value={form.department}
+                  className="w-full clay-input text-gray-600 bg-white/50 backdrop-blur-sm shadow-inner"
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {["CSE", "Mech", "Eee", "Ai", "Ec", "Civil"].map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              )}
 
-            {role === "student" && mode === "register" && (
-              <select
-                name="semester"
-                value={form.semester}
-                className="w-full clay-input text-gray-600 bg-white/50 backdrop-blur-sm shadow-inner"
-                onChange={handleChange}
-                required
-              >
-                <option value="">Semester</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                  <option key={s} value={s}>Sem {s} ({s % 2 !== 0 ? "Odd" : "Even"})</option>
-                ))}
-              </select>
-            )}
+              {role === "admin" && (
+                <input
+                  name="institution"
+                  placeholder="Institution"
+                  value={form.institution}
+                  className="w-full clay-input"
+                  onChange={handleChange}
+                  required
+                />
+              )}
 
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Password"
-                value={form.password}
-                className="w-full clay-input pr-10"
-                onChange={handleChange}
-                autoComplete="new-password"
-                required
-              />
+              {role === "student" && mode === "register" && (
+                <select
+                  name="semester"
+                  value={form.semester}
+                  className="w-full clay-input text-gray-600 bg-white/50 backdrop-blur-sm shadow-inner"
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Semester</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                    <option key={s} value={s}>Sem {s} ({s % 2 !== 0 ? "Odd" : "Even"})</option>
+                  ))}
+                </select>
+              )}
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  value={form.password}
+                  className="w-full clay-input pr-10"
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                disabled={loading}
+                className="w-full clay-btn-dark py-3 text-sm flex items-center justify-center gap-2 mt-2"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {loading ? <><Loader2 size={16} className="animate-spin" /> Processing...</> : mode === "login" ? "Sign In" : "Create Account"}
               </button>
-            </div>
+            </form>
 
-            <button
-              disabled={loading}
-              className="w-full clay-btn-dark py-3 text-sm flex items-center justify-center gap-2 mt-2"
-            >
-              {loading ? <><Loader2 size={16} className="animate-spin" /> Processing...</> : mode === "login" ? "Sign In" : "Create Account"}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-gray-400 mt-4">
-            {mode === "login" ? "No account?" : "Already registered?"}
-            <button
-              onClick={() => { setMode(mode === "login" ? "register" : "login"); resetForm(); setError(""); }}
-              className="ml-1 text-gray-900 font-medium hover:underline"
-            >
-              {mode === "login" ? "Register" : "Sign In"}
-            </button>
-          </p>
+            <p className="text-center text-xs text-gray-400 mt-4">
+              {mode === "login" ? "No account?" : "Already registered?"}
+              <button
+                onClick={() => { setMode(mode === "login" ? "register" : "login"); resetForm(); setError(""); }}
+                className="ml-1 text-gray-900 font-medium hover:underline"
+              >
+                {mode === "login" ? "Register" : "Sign In"}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

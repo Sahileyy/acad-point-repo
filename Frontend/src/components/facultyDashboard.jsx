@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useToast } from "../context/ToastContext";
 import { useNavigate } from "react-router-dom";
 import {
   LogOut, CheckCircle, XCircle, Search, FileText, Users,
@@ -7,6 +8,7 @@ import {
 import axios from "../api/axios";
 
 export default function FacultyDashboard() {
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const user = JSON.parse(sessionStorage.getItem("user")) || {};
   const faculty = {
@@ -39,7 +41,7 @@ export default function FacultyDashboard() {
   const fetchData = useCallback(async () => {
     try {
       const [studentsRes, certsRes] = await Promise.all([
-        axios.get("/users/students"),
+        axios.get(`/users/students?department=${faculty.department}`),
         axios.get("/certificates/pending")
       ]);
       setStudentsData(studentsRes.data || []);
@@ -79,7 +81,7 @@ export default function FacultyDashboard() {
     const input = reviewInput[certId] || {};
     // Validation
     if (status === "Approved" && (!input.points || input.points < 1 || input.points > 40)) {
-      alert("Please assign valid points (1-40) before approving.");
+      showToast("Please assign valid points (1-40) before approving.", "warning");
       return;
     }
 
@@ -101,7 +103,7 @@ export default function FacultyDashboard() {
       });
     } catch (err) {
       console.error("Error submitting review:", err);
-      alert("Failed to submit review.");
+      showToast("Failed to submit review.", "error");
     } finally {
       setSubmittingId(null);
     }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  User, Upload, Award, LogOut, FileText,
-  CheckCircle, Clock, AlertCircle, BarChart3, ChevronRight, Loader2
+  User, Users, Upload, Award, LogOut, FileText,
+  CheckCircle, Clock, AlertCircle, BarChart3, ChevronRight, ChevronLeft, Loader2
 } from "lucide-react";
 import CertificateUploadModal from "./CertificateUploadModal";
 import axios from "../api/axios";
@@ -13,10 +13,21 @@ export default function StudentDashboard() {
   const [uploadModal, setUploadModal] = useState({ open: false, group: "" });
   const [loading, setLoading] = useState(true);
   const [certsData, setCertsData] = useState([]);
+  const [facultyData, setFacultyData] = useState([]);
 
   const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
   const handleLogout = () => { sessionStorage.removeItem("user"); navigate("/"); };
+
+  const fetchFaculty = useCallback(async () => {
+    try {
+      if (!user.department) return;
+      const res = await axios.get(`/users/teachers?department=${user.department}`);
+      setFacultyData(res.data);
+    } catch (err) {
+      console.error("Error fetching faculty:", err);
+    }
+  }, [user.department]);
 
   const fetchCertificates = useCallback(async () => {
     try {
@@ -33,7 +44,8 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchCertificates();
-  }, [fetchCertificates]);
+    fetchFaculty();
+  }, [fetchCertificates, fetchFaculty]);
 
   // Derived state
   const group1Certs = certsData.filter(c => c.group === "Group I");
@@ -73,6 +85,7 @@ export default function StudentDashboard() {
 
   const tabs = [
     { key: "profile", label: "Profile", icon: User },
+    { key: "faculty", label: "My Faculty", icon: Users },
     { key: "group1", label: "Group I", icon: Award },
     { key: "group2", label: "Group II", icon: FileText },
     { key: "group3", label: "Group III", icon: BarChart3 },
@@ -173,6 +186,34 @@ export default function StudentDashboard() {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+
+  /* ===== Faculty Tab ===== */
+  const FacultyTab = () => (
+    <div className="space-y-4 animate-in">
+      <div className="clay-card p-5">
+        <h2 className="text-lg font-bold text-gray-900">Department Faculty</h2>
+        <p className="text-xs text-gray-500 font-medium mt-1">Faculty members in the {user.department || "your"} department.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {facultyData.length === 0 ? (
+          <p className="text-center text-sm text-gray-400 py-10 col-span-2">No faculty found for your department.</p>
+        ) : (
+          facultyData.map((f) => (
+            <div key={f._id} className="clay-card p-4 flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center text-white font-bold">
+                {f.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">{f.name}</h3>
+                <p className="text-[10px] text-gray-500 font-medium">{f.department} • Faculty ID: {f.facultyId || f.teacherId}</p>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -309,16 +350,28 @@ export default function StudentDashboard() {
       {/* Main */}
       <div className="flex-1 overflow-auto">
         <div className="sticky top-0 z-10 liquid-glass px-8 py-5 mx-6 mt-2 rounded-2xl mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-900">
-            {activeTab === "profile" && "Profile Dashboard"}
-            {activeTab === "group1" && "Group I — Co-curricular"}
-            {activeTab === "group2" && "Group II — Skills"}
-            {activeTab === "group3" && "Group III — Research"}
-          </h1>
+          <div className="flex items-center gap-4">
+            {activeTab !== "profile" && (
+              <button
+                onClick={() => setActiveTab("profile")}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/50 border border-white shadow-inner text-gray-500 hover:text-gray-900 transition hover:bg-white"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+            <h1 className="text-lg font-bold text-gray-900">
+              {activeTab === "profile" && "Profile Dashboard"}
+              {activeTab === "faculty" && "Department Faculty"}
+              {activeTab === "group1" && "Group I — Co-curricular"}
+              {activeTab === "group2" && "Group II — Skills"}
+              {activeTab === "group3" && "Group III — Research"}
+            </h1>
+          </div>
         </div>
 
         <div className="max-w-3xl mx-auto px-6 pb-10">
           {activeTab === "profile" && <ProfileTab />}
+          {activeTab === "faculty" && <FacultyTab />}
           {activeTab === "group1" && <GroupTab groupName="Group I" groupKey="groupI" groupData={student.groups.groupI} description="NSS/NCC/NSO, Arts, Sports, Games, Clubs" />}
           {activeTab === "group2" && <GroupTab groupName="Group II" groupKey="groupII" groupData={student.groups.groupII} description="Certifications, Internships, Workshops, Hackathons" />}
           {activeTab === "group3" && <GroupTab groupName="Group III" groupKey="groupIII" groupData={student.groups.groupIII} description="Publications, Patents, Start-ups, Innovation" />}

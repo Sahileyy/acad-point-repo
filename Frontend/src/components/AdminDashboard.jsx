@@ -236,7 +236,7 @@ export default function AdminDashboard() {
         <div className="animate-in">
             <div className="clay-card p-6">
                 <h2 className="text-base font-bold text-gray-900 mb-1">Activity Point Rules</h2>
-                <p className="text-xs text-gray-500 font-medium mb-6">120 points mandatory • 3 groups • Max 40 each • Teachers assign points</p>
+                <p className="text-xs text-gray-500 font-medium mb-6">120 points mandatory • 3 groups (33.333% each) • Max 40 points each • Teachers assign points</p>
                 <div className="space-y-4">
                     {activityRules.map((r) => (
                         <div key={r.group} className="bg-white/40 backdrop-blur shadow-inner rounded-xl p-5 border border-white/60">

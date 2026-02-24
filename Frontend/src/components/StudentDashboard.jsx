@@ -64,7 +64,7 @@ export default function StudentDashboard() {
 
   const totalEarned = g1.earned + g2.earned + g3.earned;
   const totalRequired = 120;
-  const totalPct = Math.round((totalEarned / totalRequired) * 1000) / 10;
+  const totalPct = Math.round((totalEarned / totalRequired) * 100000) / 1000;
 
   const student = {
     name: user.name || "Student Name",
@@ -147,7 +147,7 @@ export default function StudentDashboard() {
             <div className="h-full bg-gradient-to-r from-gray-700 to-gray-900 rounded-full animate-progress" style={{ width: `${student.pct}%` }}></div>
           </div>
           <p className="text-[10px] text-gray-500 font-medium mt-2">
-            {student.required - student.earned > 0 ? `${student.required - student.earned} more points needed` : "Task completed!"}
+            {student.required - student.earned > 0 ? `${student.required - student.earned} more points needed` : "Completion achieved!"}
           </p>
         </div>
       </div>
@@ -221,7 +221,8 @@ export default function StudentDashboard() {
   /* ===== Group Tab ===== */
   const GroupTab = ({ groupName, groupKey, groupData, description }) => {
     const certs = certificates[groupKey] || [];
-    const pct = Math.min(Math.round((groupData.earned / groupData.max) * 100), 100);
+    const groupMax = 120; // Changed from groupData.max to 120 to show pct relative to total
+    const pct = Math.min(Math.round((groupData.earned / groupMax) * 100000) / 1000, 33.333);
 
     return (
       <div className="space-y-5 animate-in">

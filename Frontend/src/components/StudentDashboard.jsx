@@ -62,9 +62,10 @@ export default function StudentDashboard() {
   const g2 = calcGroup(group2Certs);
   const g3 = calcGroup(group3Certs);
 
-  const totalEarned = Math.min(g1.earned, 40) + Math.min(g2.earned, 40) + Math.min(g3.earned, 40);
+  const totalEarned = g1.earned + g2.earned + g3.earned;
+  const cappedEarned = Math.min(g1.earned, 40) + Math.min(g2.earned, 40) + Math.min(g3.earned, 40);
   const totalRequired = 120;
-  const totalPct = Math.round((totalEarned / totalRequired) * 100000) / 1000;
+  const totalPct = Math.round((cappedEarned / totalRequired) * 100000) / 1000;
 
   const student = {
     name: user.name || "Student Name",
@@ -72,6 +73,7 @@ export default function StudentDashboard() {
     semester: user.semester || 5,
     semType: user.semester ? (user.semester % 2 !== 0 ? "Odd" : "Even") : "Odd",
     earned: totalEarned,
+    capped: cappedEarned,
     required: totalRequired,
     pct: totalPct > 100 ? 100 : totalPct,
     groups: { groupI: g1, groupII: g2, groupIII: g3 }
@@ -141,13 +143,13 @@ export default function StudentDashboard() {
         <div className="bg-white/40 backdrop-blur-sm border border-white/60 shadow-inner rounded-xl p-4">
           <div className="flex justify-between text-xs mb-2">
             <span className="text-gray-600 font-medium">Overall Progress</span>
-            <span className="font-bold text-gray-800">{student.earned}/{student.required}</span>
+            <span className="font-bold text-gray-800">{student.capped}/{student.required}</span>
           </div>
           <div className="w-full h-3 bg-gray-200 shadow-inner rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-gray-700 to-gray-900 rounded-full animate-progress" style={{ width: `${student.pct}%` }}></div>
           </div>
           <p className="text-[10px] text-gray-500 font-medium mt-2">
-            {student.required - student.earned > 0 ? `${student.required - student.earned} more points needed` : "Completion achieved!"}
+            {student.required - student.capped > 0 ? `${student.required - student.capped} more points needed` : "Completion achieved!"}
           </p>
         </div>
       </div>
@@ -221,8 +223,9 @@ export default function StudentDashboard() {
   /* ===== Group Tab ===== */
   const GroupTab = ({ groupName, groupKey, groupData, description }) => {
     const certs = certificates[groupKey] || [];
-    const groupMax = 120; // Changed from groupData.max to 120 to show pct relative to total
-    const pct = Math.min(Math.round((groupData.earned / groupMax) * 100000) / 1000, 33.333);
+    const groupMax = 120;
+    const cappedGroupPoints = Math.min(groupData.earned, 40);
+    const pct = Math.round((cappedGroupPoints / groupMax) * 100000) / 1000;
 
     return (
       <div className="space-y-5 animate-in">

@@ -18,16 +18,18 @@ router.get("/students", async (req, res) => {
         const studentsWithPoints = students.map(student => {
             const studentCerts = allCerts.filter(c => c.studentId.toString() === student._id.toString());
 
-            // Calculate capped points per group
+            // Calculate raw and capped points
             const g1 = studentCerts.filter(c => c.group === "Group I").reduce((sum, c) => sum + (c.points || 0), 0);
             const g2 = studentCerts.filter(c => c.group === "Group II").reduce((sum, c) => sum + (c.points || 0), 0);
             const g3 = studentCerts.filter(c => c.group === "Group III").reduce((sum, c) => sum + (c.points || 0), 0);
 
-            const points = Math.min(g1, 40) + Math.min(g2, 40) + Math.min(g3, 40);
+            const rawPoints = g1 + g2 + g3;
+            const cappedPoints = Math.min(g1, 40) + Math.min(g2, 40) + Math.min(g3, 40);
 
             return {
                 ...student.toObject(),
-                points
+                points: rawPoints,
+                cappedPoints: cappedPoints
             };
         });
 

@@ -47,7 +47,8 @@ export default function AdminDashboard() {
                 regNo: s.registerNumber,
                 department: `${s.department} (S${s.semester})`,
                 status: s.status || "Active",
-                points: s.points || 0
+                points: s.points || 0,
+                capped: s.cappedPoints || 0
             }));
 
             const fetchedTeachers = (teachersRes.data || []).map(t => ({
@@ -227,7 +228,7 @@ export default function AdminDashboard() {
                                 <td><span className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-inner border border-white/60 ${u.type === "Student" ? "bg-blue-100/50 text-blue-700" : "bg-purple-100/50 text-purple-700"}`}>{u.type}</span></td>
                                 <td className="text-xs font-medium text-gray-600">{u.regNo}</td>
                                 <td className="text-xs font-medium text-gray-600">{u.department}</td>
-                                <td className="text-center text-sm">{u.points !== null ? <span className={u.points >= 120 ? "text-green-600 font-bold" : u.points < 60 ? "text-red-500 font-bold" : "text-gray-800 font-bold"}>{u.points}</span> : <span className="text-gray-400 font-medium">—</span>}</td>
+                                <td className="text-center text-sm">{u.points !== null ? <span className={u.capped >= 120 ? "text-green-600 font-bold" : u.capped < 40 ? "text-red-500 font-bold" : "text-gray-800 font-bold"}>{u.points}</span> : <span className="text-gray-400 font-medium">—</span>}</td>
                                 <td className="text-center"><span className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-inner border border-white/60 ${u.status === "Active" ? "bg-green-100/50 text-green-700" : "bg-gray-200/50 text-gray-500"}`}>{u.status}</span></td>
                                 <td className="text-center">
                                     <div className="flex items-center justify-center gap-1.5">

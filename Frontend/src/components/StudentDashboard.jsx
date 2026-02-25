@@ -62,9 +62,10 @@ export default function StudentDashboard() {
   const g2 = calcGroup(group2Certs);
   const g3 = calcGroup(group3Certs);
 
-  const totalEarned = Math.min(g1.earned, 40) + Math.min(g2.earned, 40) + Math.min(g3.earned, 40);
+  const totalEarned = g1.earned + g2.earned + g3.earned;
+  const cappedEarned = Math.min(g1.earned, 40) + Math.min(g2.earned, 40) + Math.min(g3.earned, 40);
   const totalRequired = 120;
-  const totalPct = Math.round((totalEarned / totalRequired) * 100000) / 1000;
+  const totalPct = Math.round((cappedEarned / totalRequired) * 100000) / 1000;
 
   const student = {
     name: user.name || "Student Name",
@@ -72,6 +73,7 @@ export default function StudentDashboard() {
     semester: user.semester || 5,
     semType: user.semester ? (user.semester % 2 !== 0 ? "Odd" : "Even") : "Odd",
     earned: totalEarned,
+    capped: cappedEarned,
     required: totalRequired,
     pct: totalPct > 100 ? 100 : totalPct,
     groups: { groupI: g1, groupII: g2, groupIII: g3 }
@@ -221,8 +223,9 @@ export default function StudentDashboard() {
   /* ===== Group Tab ===== */
   const GroupTab = ({ groupName, groupKey, groupData, description }) => {
     const certs = certificates[groupKey] || [];
-    const groupMax = 120; // Changed from groupData.max to 120 to show pct relative to total
-    const pct = Math.min(Math.round((groupData.earned / groupMax) * 100000) / 1000, 33.333);
+    const groupMax = 120;
+    const cappedGroupPoints = Math.min(groupData.earned, 40);
+    const pct = Math.round((cappedGroupPoints / groupMax) * 100000) / 1000;
 
     return (
       <div className="space-y-5 animate-in">

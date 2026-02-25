@@ -128,7 +128,8 @@ export default function FacultyDashboard() {
       regNo: st.registerNumber,
       name: st.name,
       total: st.points || 0,
-      groupI: 0, // We don't have detailed breakdown in the current simple /users/students route, mock to 0 or calculate if returned
+      capped: st.cappedPoints || 0,
+      groupI: 0,
       groupII: 0,
       groupIII: 0,
       pendingCerts: pendingRequests.filter(req => req.studentId && req.studentId._id === st._id).length,
@@ -145,12 +146,12 @@ export default function FacultyDashboard() {
 
   const allStudents = assignedClasses.flatMap(c => c.students);
   const totalPending = pendingRequests.length;
-  const lowStudents = allStudents.filter(s => s.total < 60).length;
+  const lowStudents = allStudents.filter(s => s.capped < 40).length; // Low activity based on capped progress
 
   const filteredStudents = (students) =>
     students.filter((s) => {
       const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.regNo.toLowerCase().includes(search.toLowerCase());
-      const matchFilter = filterStatus === "all" || (filterStatus === "pending" && s.pendingCerts > 0) || (filterStatus === "low" && s.total < 60);
+      const matchFilter = filterStatus === "all" || (filterStatus === "pending" && s.pendingCerts > 0) || (filterStatus === "low" && s.capped < 40);
       return matchSearch && matchFilter;
     });
 
@@ -236,7 +237,7 @@ export default function FacultyDashboard() {
                     <td className="px-4 py-2.5 text-xs font-medium text-gray-600">{s.regNo}</td>
                     <td className="text-xs text-gray-800 font-medium">{s.name}</td>
                     <td className="text-center">
-                      <span className={`text-xs font-semibold ${s.total >= 120 ? "text-green-600" : s.total < 60 ? "text-red-600" : "text-gray-800"}`}>
+                      <span className={`text-xs font-semibold ${s.capped >= 120 ? "text-green-600" : s.capped < 40 ? "text-red-600" : "text-gray-800"}`}>
                         {s.total}
                       </span>
                     </td>
@@ -313,13 +314,7 @@ export default function FacultyDashboard() {
               </div>
             )}
 
-            {/* Group cap info banner */}
-            <div className="bg-blue-50/60 backdrop-blur border border-blue-100/70 shadow-inner rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
-              <Award size={13} className="text-blue-400 flex-shrink-0" />
-              <p className="text-[10px] text-blue-700 font-semibold">
-                <span className="font-bold">{req.group}</span> — max <span className="font-bold">40 points</span> per student. The system will block approval if this student&apos;s group total would exceed 40.
-              </p>
-            </div>
+            {/* Group cap info banner removed */}
 
             {/* Assign Points + Remarks */}
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -382,7 +377,7 @@ export default function FacultyDashboard() {
           </div>
           <div className="bg-white/40 backdrop-blur shadow-inner border border-white/60 rounded-xl p-4">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Completion Rate</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{allStudents.length ? Math.round(allStudents.filter(s => s.total >= 120).length / allStudents.length * 100) : 0}%</p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">{allStudents.length ? Math.round(allStudents.filter(s => s.capped >= 120).length / allStudents.length * 100) : 0}%</p>
           </div>
           <div className="bg-red-50/50 backdrop-blur shadow-inner border border-red-100/50 rounded-xl p-4">
             <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">At Risk</p>
@@ -473,11 +468,11 @@ export default function FacultyDashboard() {
             <div className="p-6 space-y-5">
               <div className="bg-white/40 backdrop-blur shadow-inner border border-white/60 rounded-xl p-4">
                 <div className="flex justify-between text-xs mb-2">
-                  <span className="text-gray-600 font-bold uppercase tracking-wide">Total Points</span>
-                  <span className="font-bold text-gray-900">{selectedStudent.total}/120</span>
+                  <span className="text-gray-600 font-bold uppercase tracking-wide">Academic Progress</span>
+                  <span className="font-bold text-gray-900">{selectedStudent.capped}/120</span>
                 </div>
                 <div className="w-full h-2.5 bg-gray-200 shadow-inner rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${selectedStudent.total >= 120 ? "bg-green-500" : selectedStudent.total < 60 ? "bg-red-500" : "bg-gradient-to-r from-gray-700 to-gray-900"}`} style={{ width: `${Math.min((selectedStudent.total / 120) * 100, 100)}%` }}></div>
+                  <div className={`h-full rounded-full ${selectedStudent.capped >= 120 ? "bg-green-500" : selectedStudent.capped < 40 ? "bg-red-500" : "bg-gradient-to-r from-gray-700 to-gray-900"}`} style={{ width: `${Math.min((selectedStudent.capped / 120) * 100, 100)}%` }}></div>
                 </div>
               </div>
               {selectedStudent.pendingCerts > 0 && (

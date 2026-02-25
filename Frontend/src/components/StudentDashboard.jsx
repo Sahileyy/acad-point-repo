@@ -62,7 +62,7 @@ export default function StudentDashboard() {
   const g2 = calcGroup(group2Certs);
   const g3 = calcGroup(group3Certs);
 
-  const totalEarned = g1.earned + g2.earned + g3.earned;
+  const totalEarned = Math.min(g1.earned, 40) + Math.min(g2.earned, 40) + Math.min(g3.earned, 40);
   const totalRequired = 120;
   const totalPct = Math.round((totalEarned / totalRequired) * 100000) / 1000;
 

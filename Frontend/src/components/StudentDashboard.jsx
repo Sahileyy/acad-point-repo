@@ -143,13 +143,13 @@ export default function StudentDashboard() {
         <div className="bg-white/40 backdrop-blur-sm border border-white/60 shadow-inner rounded-xl p-4">
           <div className="flex justify-between text-xs mb-2">
             <span className="text-gray-600 font-medium">Overall Progress</span>
-            <span className="font-bold text-gray-800">{student.capped}/{student.required}</span>
+            <span className="font-bold text-gray-800">{student.earned}/{student.required}</span>
           </div>
           <div className="w-full h-3 bg-gray-200 shadow-inner rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-gray-700 to-gray-900 rounded-full animate-progress" style={{ width: `${student.pct}%` }}></div>
           </div>
           <p className="text-[10px] text-gray-500 font-medium mt-2">
-            {student.required - student.capped > 0 ? `${student.required - student.capped} more points needed` : "Completion achieved!"}
+            {student.required - student.earned > 0 ? `${student.required - student.earned} more points needed` : "Completion achieved!"}
           </p>
         </div>
       </div>

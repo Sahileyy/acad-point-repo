@@ -314,13 +314,7 @@ export default function FacultyDashboard() {
               </div>
             )}
 
-            {/* Group cap info banner */}
-            <div className="bg-blue-50/60 backdrop-blur border border-blue-100/70 shadow-inner rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
-              <Award size={13} className="text-blue-400 flex-shrink-0" />
-              <p className="text-[10px] text-blue-700 font-semibold">
-                <span className="font-bold">{req.group}</span> — max <span className="font-bold">40 points</span> per student. The system will block approval if this student&apos;s group total would exceed 40.
-              </p>
-            </div>
+            {/* Group cap info banner removed */}
 
             {/* Assign Points + Remarks */}
             <div className="grid grid-cols-2 gap-3 mb-4">

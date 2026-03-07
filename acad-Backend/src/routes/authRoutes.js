@@ -69,7 +69,7 @@ router.post("/login", async (req, res) => {
 ========================= */
 router.post("/students/register", async (req, res) => {
   try {
-    const { registerNumber, name, semester, department, email, password } = req.body;
+    const { registerNumber, name, semester, department, email, password, tutorId } = req.body;
 
     const nameRegex = /^[A-Za-z\s]+$/;
     if (!nameRegex.test(name)) {
@@ -95,6 +95,7 @@ router.post("/students/register", async (req, res) => {
       department,
       email,
       password: hashedPassword,
+      tutorId,
     });
 
     res.status(201).json({ message: "Registration successful" });
@@ -137,6 +138,36 @@ router.post("/faculty/register", async (req, res) => {
     });
 
     res.status(201).json({ message: "Faculty registration successful" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   GET FACULTY BY DEPARTMENT
+   (For registration dropdown)
+========================= */
+router.get("/faculty/:department", async (req, res) => {
+  try {
+    const { department } = req.params;
+    const faculty = await Faculty.find({ department, status: "Active" }, "_id name");
+    res.json(faculty);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================
+   GET FACULTY BY DEPARTMENT
+   (For registration dropdown)
+========================= */
+router.get("/faculty/:department", async (req, res) => {
+  try {
+    const { department } = req.params;
+    const faculty = await Faculty.find({ department, status: "Active" }, "_id name");
+    res.json(faculty);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

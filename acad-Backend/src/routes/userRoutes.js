@@ -8,8 +8,11 @@ const router = express.Router();
 // 1. Get all students (Admin & Faculty)
 router.get("/students", async (req, res) => {
     try {
-        const { department } = req.query;
-        const filter = department ? { department } : {};
+        const { department, tutorId } = req.query;
+        const filter = {};
+        if (department) filter.department = department;
+        if (tutorId) filter.tutorId = tutorId;
+
         const students = await Student.find(filter, "-password"); // Exclude passwords
 
         // Let's also fetch their points

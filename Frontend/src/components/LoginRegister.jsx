@@ -19,11 +19,14 @@ export default function LoginRegister() {
 
   const [mode, setMode] = useState("login");
   const [role, setRole] = useState("student");
+  const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [blockedPopup, setBlockedPopup] = useState(false);
+  const [facultyList, setFacultyList] = useState([]);
+  const [loadingFaculty, setLoadingFaculty] = useState(false);
 
   const initialForm = {
     registerNumber: "",
@@ -35,16 +38,83 @@ export default function LoginRegister() {
     email: "",
     password: "",
     semester: "",
+    tutorId: "",
   };
 
   const [form, setForm] = useState(initialForm);
 
-  const resetForm = () => setForm(initialForm);
+  const resetForm = () => {
+    setForm(initialForm);
+    setStep(1);
+  };
+
+  const validateStep = () => {
+    if (mode === "login") return true;
+
+    if (role === "student") {
+      if (step === 1) {
+        if (!form.name || !form.registerNumber || !form.email) {
+          showToast("Please fill all required fields", "error");
+          return false;
+        }
+      } else if (step === 2) {
+        if (!form.department || !form.semester || !form.tutorId) {
+          showToast("Please select all academic details", "error");
+          return false;
+        }
+      }
+    } else if (role === "faculty") {
+      if (step === 1) {
+        if (!form.name || !form.teacherId || !form.email || !form.department) {
+          showToast("Please fill all required fields", "error");
+          return false;
+        }
+      }
+    } else if (role === "admin") {
+      if (step === 1) {
+        if (!form.adminName || !form.department || !form.institution) {
+          showToast("Please fill all required fields", "error");
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const handleNext = (e) => {
+    e.preventDefault();
+    if (validateStep()) {
+      setStep(step + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: name === "registerNumber" ? value.toUpperCase() : value });
+    if (name === "department" && mode === "register" && role === "student") {
+      fetchFaculty(value);
+    }
     setError("");
+  };
+
+  const fetchFaculty = async (dept) => {
+    if (!dept) {
+      setFacultyList([]);
+      return;
+    }
+    setLoadingFaculty(true);
+    try {
+      const { data } = await api.get(`/auth/faculty/${dept}`);
+      setFacultyList(data);
+    } catch (err) {
+      console.error("Error fetching faculty:", err);
+    } finally {
+      setLoadingFaculty(false);
+    }
   };
 
   const roles = [
@@ -86,6 +156,7 @@ export default function LoginRegister() {
             semester: form.semester,
             department: form.department,
             password: form.password,
+            tutorId: form.tutorId,
           };
         } else if (role === "faculty") {
           endpoint = "http://localhost:5000/auth/faculty/register";
@@ -112,6 +183,7 @@ export default function LoginRegister() {
 
         if (mode === "register") {
           setMode("login");
+          setStep(1);
           setLoading(false);
           showToast("Registration successful! Please login.", "success");
           setIsLogin(true);
@@ -158,6 +230,23 @@ export default function LoginRegister() {
   };
 
   const currentRoleData = roleData[role] || roleData.student;
+
+  const totalSteps = role === "student" ? 3 : 2;
+
+  const renderStepIndicator = () => {
+    if (mode === "login") return null;
+    return (
+      <div className="flex items-center justify-center gap-2 mb-6">
+        {[...Array(totalSteps)].map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 rounded-full transition-all duration-300 ${step > i + 1 ? "w-8 bg-blue-500" : step === i + 1 ? "w-8 bg-blue-600" : "w-4 bg-gray-200"
+              }`}
+          />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -217,32 +306,46 @@ export default function LoginRegister() {
             </div>
 
             {/* Card */}
-            <div className="liquid-glass rounded-2xl p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-50"></div>
+            <div className="liquid-glass rounded-3xl p-8 shadow-2xl relative overflow-hidden border border-white/40">
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-80"></div>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-1 relative z-10">
-                {mode === "login" ? "Sign in" : "Create account"}
-              </h2>
-              <p className="text-sm text-gray-500 mb-6 relative z-10 font-medium">
-                {role === "student" ? "Student Portal" : role === "faculty" ? "Faculty Portal" : "Admin Portal"}
-              </p>
+              <div className="flex justify-between items-center mb-6 relative z-10">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {mode === "login" ? "Welcome Back" : "Register"}
+                  </h2>
+                  <p className="text-sm text-gray-500 font-medium mt-1">
+                    {role === "student" ? "Student Portal" : role === "faculty" ? "Faculty Portal" : "Admin Portal"}
+                  </p>
+                </div>
+                {mode === "register" && (
+                  <div className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                    Step {step} of {totalSteps}
+                  </div>
+                )}
+              </div>
 
               {/* Role Tabs */}
-              <div className="flex mb-6 bg-white/40 backdrop-blur-md rounded-xl p-1 gap-1 relative z-10 border border-white/40 shadow-inner">
-                {roles.map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => { setRole(key); resetForm(); setError(""); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${role === key
-                      ? "bg-white text-gray-900 shadow-sm border border-white/60"
-                      : "text-gray-600 hover:bg-white/30"
-                      }`}
-                  >
-                    <Icon size={14} />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {mode === "login" && (
+                <div className="flex mb-8 bg-gray-100/50 backdrop-blur-md rounded-2xl p-1.5 gap-1.5 relative z-10 border border-gray-200 shadow-inner">
+                  {roles.map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => { setRole(key); resetForm(); setError(""); }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${role === key
+                        ? "bg-white text-blue-600 shadow-md transform scale-[1.02]"
+                        : "text-gray-500 hover:bg-white/50"
+                        }`}
+                    >
+                      <Icon size={16} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Step Indicator */}
+              {renderStepIndicator()}
 
               {/* Error */}
               {error && (
@@ -252,158 +355,255 @@ export default function LoginRegister() {
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-3" autoComplete="off">
-                {mode === "register" && (
-                  <input
-                    name="name"
-                    placeholder="Full Name"
-                    value={form.name}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    required
-                  />
-                )}
+              <form onSubmit={step === totalSteps || mode === "login" ? handleSubmit : handleNext} className="space-y-4" autoComplete="off">
+                <div className="relative overflow-hidden min-h-[180px]">
+                  {/* STEP 1: PERSONAL / PRIMARY INFO */}
+                  {(step === 1 || mode === "login") && (
+                    <div className="space-y-4 animate-in">
+                      {mode === "register" && (
+                        <input
+                          name="name"
+                          placeholder="Full Name"
+                          value={form.name}
+                          className="w-full clay-input"
+                          onChange={handleChange}
+                          required
+                        />
+                      )}
 
-                {role === "student" && (
-                  <input
-                    name="registerNumber"
-                    placeholder="Register Number"
-                    value={form.registerNumber}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    autoComplete="off"
-                    required
-                  />
-                )}
+                      {role === "student" && (
+                        <input
+                          name="registerNumber"
+                          placeholder="Register Number"
+                          value={form.registerNumber}
+                          className="w-full clay-input"
+                          onChange={handleChange}
+                          autoComplete="off"
+                          required
+                        />
+                      )}
 
-                {role === "faculty" && (
-                  <input
-                    name="teacherId"
-                    placeholder="Teacher ID"
-                    value={form.teacherId}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    required
-                  />
-                )}
+                      {role === "faculty" && (
+                        <>
+                          <input
+                            name="teacherId"
+                            placeholder="Teacher ID"
+                            value={form.teacherId}
+                            className="w-full clay-input"
+                            onChange={handleChange}
+                            required
+                          />
+                          {mode === "register" && (
+                            <select
+                              name="department"
+                              value={form.department}
+                              className="w-full clay-input text-gray-600 bg-white"
+                              onChange={handleChange}
+                              required
+                            >
+                              <option value="">Select Department</option>
+                              {["CSE", "Mech", "Eee", "Ai", "Ec", "Civil"].map((dept) => (
+                                <option key={dept} value={dept}>{dept}</option>
+                              ))}
+                            </select>
+                          )}
+                        </>
+                      )}
 
-                {role === "admin" && (
-                  <input
-                    name="adminName"
-                    placeholder="Admin Username"
-                    value={form.adminName}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    required
-                  />
-                )}
+                      {role === "admin" && (
+                        <>
+                          <input
+                            name="adminName"
+                            placeholder="Admin Username"
+                            value={form.adminName}
+                            className="w-full clay-input"
+                            onChange={handleChange}
+                            required
+                          />
+                          {mode === "register" && (
+                            <>
+                              <select
+                                name="department"
+                                value={form.department}
+                                className="w-full clay-input text-gray-600 bg-white"
+                                onChange={handleChange}
+                                required
+                              >
+                                <option value="">Select Department</option>
+                                {["CSE", "Mech", "Eee", "Ai", "Ec", "Civil"].map((dept) => (
+                                  <option key={dept} value={dept}>{dept}</option>
+                                ))}
+                              </select>
+                              <input
+                                name="institution"
+                                placeholder="Institution"
+                                value={form.institution}
+                                className="w-full clay-input"
+                                onChange={handleChange}
+                                required
+                              />
+                            </>
+                          )}
+                        </>
+                      )}
 
-                {/* Email — only shown during registration for student and faculty */}
-                {mode === "register" && (role === "student" || role === "faculty") && (
-                  <input
-                    name="email"
-                    type="email"
-                    placeholder="Email Address"
-                    value={form.email}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    required
-                  />
-                )}
+                      {mode === "register" && (role === "student" || role === "faculty") && (
+                        <input
+                          name="email"
+                          type="email"
+                          placeholder="Email Address"
+                          value={form.email}
+                          className="w-full clay-input"
+                          onChange={handleChange}
+                          required
+                        />
+                      )}
 
-                {((role === "admin") || (role === "faculty" && mode === "register") || (role === "student" && mode === "register")) && (
-                  <select
-                    name="department"
-                    value={form.department}
-                    className="w-full clay-input text-gray-600 bg-white/50 backdrop-blur-sm shadow-inner"
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select Department</option>
-                    {["CSE", "Mech", "Eee", "Ai", "Ec", "Civil"].map((dept) => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-                )}
+                      {mode === "login" && (
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            placeholder="Password"
+                            value={form.password}
+                            className="w-full clay-input pr-10"
+                            onChange={handleChange}
+                            autoComplete="current-password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                {role === "admin" && (
-                  <input
-                    name="institution"
-                    placeholder="Institution"
-                    value={form.institution}
-                    className="w-full clay-input"
-                    onChange={handleChange}
-                    required
-                  />
-                )}
+                  {/* STEP 2 (STUDENT): ACADEMIC DETAILS */}
+                  {mode === "register" && role === "student" && step === 2 && (
+                    <div className="space-y-4 animate-in">
+                      <select
+                        name="department"
+                        value={form.department}
+                        className="w-full clay-input text-gray-600 bg-white"
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="">Select Department</option>
+                        {["CSE", "Mech", "Eee", "Ai", "Ec", "Civil"].map((dept) => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
 
-                {role === "student" && mode === "register" && (
-                  <select
-                    name="semester"
-                    value={form.semester}
-                    className="w-full clay-input text-gray-600 bg-white/50 backdrop-blur-sm shadow-inner"
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Semester</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                      <option key={s} value={s}>Sem {s} ({s % 2 !== 0 ? "Odd" : "Even"})</option>
-                    ))}
-                  </select>
-                )}
+                      <select
+                        name="semester"
+                        value={form.semester}
+                        className="w-full clay-input text-gray-600 bg-white"
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="">Semester</option>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                          <option key={s} value={s}>Sem {s}</option>
+                        ))}
+                      </select>
 
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    className="w-full clay-input pr-10"
-                    onChange={handleChange}
-                    autoComplete="new-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                      <select
+                        name="tutorId"
+                        value={form.tutorId}
+                        className="w-full clay-input text-gray-600 bg-white"
+                        onChange={handleChange}
+                        required
+                        disabled={!form.department || loadingFaculty}
+                      >
+                        <option value="">{loadingFaculty ? "Loading Faculty..." : "Select Faculty Tutor"}</option>
+                        {facultyList.map((f) => (
+                          <option key={f._id} value={f._id}>{f.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* FINAL STEP: PASSWORD */}
+                  {mode === "register" && step === totalSteps && (
+                    <div className="space-y-4 animate-in">
+                      <p className="text-xs text-gray-500 font-medium mb-2">Secure your account with a strong password.</p>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          placeholder="Create Password"
+                          value={form.password}
+                          className="w-full clay-input pr-10"
+                          onChange={handleChange}
+                          autoComplete="new-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  disabled={loading}
-                  className="w-full clay-btn-dark py-3 text-sm flex items-center justify-center gap-2 mt-2"
-                >
-                  {loading
-                    ? <><Loader2 size={16} className="animate-spin" /> Processing...</>
-                    : mode === "login" ? "Sign In" : "Create Account"
-                  }
-                </button>
+                <div className="flex gap-3 pt-2">
+                  {mode === "register" && step > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="flex-1 clay-btn py-3.5 text-sm font-bold flex items-center justify-center gap-2"
+                    >
+                      Back
+                    </button>
+                  )}
+
+                  <button
+                    disabled={loading}
+                    className={`${(mode === "register" && step > 1) ? "flex-1" : "w-full"} clay-btn-dark py-3.5 text-sm font-bold flex items-center justify-center gap-2 group`}
+                  >
+                    {loading ? (
+                      <><Loader2 size={18} className="animate-spin" /> Processing...</>
+                    ) : (
+                      <>
+                        {mode === "login" ? "Sign In" : step === totalSteps ? "Complete Registration" : "Continue"}
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
 
               {/* Bottom Links */}
-              <p className="text-center text-xs text-gray-400 mt-4">
-                {mode === "login" ? "No account?" : "Already registered?"}
-                <button
-                  onClick={() => { setMode(mode === "login" ? "register" : "login"); resetForm(); setError(""); }}
-                  className="ml-1 text-gray-900 font-medium hover:underline"
-                >
-                  {mode === "login" ? "Register" : "Sign In"}
-                </button>
-              </p>
-
-              {mode === "login" && (
-                <p className="text-center text-xs text-gray-400 mt-2">
-                  <a
-                    href={`/forgot-password/${role}`}
-                    className="text-gray-500 hover:text-gray-900 font-medium hover:underline transition"
+              <div className="mt-8 text-center space-y-3 relative z-10">
+                <p className="text-sm text-gray-500 font-medium">
+                  {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+                  <button
+                    onClick={() => { setMode(mode === "login" ? "register" : "login"); resetForm(); setError(""); }}
+                    className="ml-2 text-blue-600 font-bold hover:text-blue-700 hover:underline transition-all"
                   >
-                    Forgot Password?
-                  </a>
+                    {mode === "login" ? "Get Started" : "Sign In"}
+                  </button>
                 </p>
-              )}
+
+                {mode === "login" && (
+                  <p>
+                    <a
+                      href={`/forgot-password/${role}`}
+                      className="text-xs text-gray-400 hover:text-gray-900 font-bold tracking-wide uppercase transition-colors"
+                    >
+                      Forgot Your Password?
+                    </a>
+                  </p>
+                )}
+              </div>
 
             </div>
           </div>

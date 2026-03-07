@@ -41,8 +41,8 @@ export default function FacultyDashboard() {
   const fetchData = useCallback(async () => {
     try {
       const [studentsRes, certsRes] = await Promise.all([
-        axios.get(`/users/students?department=${faculty.department}`),
-        axios.get("/certificates/pending")
+        axios.get(`/users/students?department=${faculty.department}&tutorId=${faculty.id}`),
+        axios.get(`/certificates/pending?tutorId=${faculty.id}`)
       ]);
       setStudentsData(studentsRes.data || []);
       setPendingRequests(certsRes.data || []);

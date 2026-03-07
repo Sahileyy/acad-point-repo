@@ -82,7 +82,16 @@ router.get("/student/:studentId", async (req, res) => {
 // 3. Get pending certificates (for faculty)
 router.get("/pending", async (req, res) => {
     try {
-        const pendingCerts = await Certificate.find({ status: "Pending" })
+        const { tutorId } = req.query;
+        let query = { status: "Pending" };
+
+        if (tutorId) {
+            // Find students assigned to this tutor
+            const studentIds = await Student.find({ tutorId }).distinct("_id");
+            query.studentId = { $in: studentIds };
+        }
+
+        const pendingCerts = await Certificate.find(query)
             .populate("studentId", "name registerNumber semester")
             .sort({ createdAt: 1 });
         res.status(200).json(pendingCerts);

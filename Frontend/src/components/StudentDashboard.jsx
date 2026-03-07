@@ -120,6 +120,9 @@ export default function StudentDashboard() {
           <div>
             <h2 className="text-lg font-bold text-gray-900">{student.name}</h2>
             <p className="text-xs text-gray-500 font-medium">{student.regNo} • Semester {student.semester} ({student.semType})</p>
+            {user.tutorName && (
+              <p className="text-[10px] text-gray-400 font-semibold mt-1">Tutor: {user.tutorName}</p>
+            )}
           </div>
         </div>
 

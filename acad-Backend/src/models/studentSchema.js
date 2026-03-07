@@ -5,9 +5,12 @@ const studentSchema = new mongoose.Schema({
   name: String,
   semester: Number,
   department: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   password: String,
   role: { type: String, default: "student" },
-  status: { type: String, enum: ["Active", "Disabled"], default: "Active" }
+  status: { type: String, enum: ["Active", "Disabled"], default: "Active" },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 });
 
 export default mongoose.model("Student", studentSchema);

@@ -156,23 +156,8 @@ router.get("/faculty/:department", async (req, res) => {
     const faculty = await Faculty.find({ department, status: "Active" }, "_id name");
     res.json(faculty);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-/* =========================
-   GET FACULTY BY DEPARTMENT
-   (For registration dropdown)
-========================= */
-router.get("/faculty/:department", async (req, res) => {
-  try {
-    const { department } = req.params;
-    const faculty = await Faculty.find({ department, status: "Active" }, "_id name");
-    res.json(faculty);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Fetch Faculty Error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -215,7 +200,7 @@ router.post("/forgot-password/:role", async (req, res) => {
   try {
 
     if (role === "student") {
-      user = await Student.findOne({ registerNumber: id });
+      user = await Student.findOne({ registerNumber: id.toUpperCase() });
     } else if (role === "faculty") {
       user = await Faculty.findOne({ facultyId: id });
     } else {
@@ -274,7 +259,7 @@ router.post("/verify-otp/:role", async (req, res) => {
 
     let user;
     if (role === "student") {
-      user = await Student.findOne({ registerNumber: id, email });
+      user = await Student.findOne({ registerNumber: id.toUpperCase(), email });
     } else if (role === "faculty") {
       user = await Faculty.findOne({ facultyId: id, email });
     } else {
@@ -315,7 +300,7 @@ router.post("/reset-password-otp/:role", async (req, res) => {
     };
 
     if (role === "student") {
-      query.registerNumber = id;
+      query.registerNumber = id.toUpperCase();
       user = await Student.findOne(query);
     } else if (role === "faculty") {
       query.facultyId = id;
